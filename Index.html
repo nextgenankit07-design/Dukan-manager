@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#0b1020">
+<title>Dukan Manager</title>
+<link rel="stylesheet" href="style.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js"></script>
+</head>
+
+<body>
+
+<!-- LOGIN -->
+<div id="loginScreen" class="screen login-screen">
+  <div class="login-card">
+    <div class="app-logo">DM</div>
+    <h1>Dukan Manager</h1>
+    <p class="muted">Manage your shop smarter</p>
+
+    <div class="input-group">
+      <label>Shop ID</label>
+      <input id="loginShopId" placeholder="Example: ANKIT4821">
+    </div>
+
+    <button id="loginBtn" class="primary-btn full">Login to Shop</button>
+    <button id="openCreateShopBtn" class="secondary-btn full">+ Create New Shop</button>
+    <p id="loginMessage" class="message"></p>
+  </div>
+</div>
+
+
+<!-- APP -->
+<div id="appScreen" class="screen app-screen hidden">
+
+<header class="top-header">
+  <div>
+    <small>WELCOME TO</small>
+    <h2 id="headerShopName">My Shop</h2>
+  </div>
+  <div class="header-right">
+    <div id="syncStatus" class="sync-pill">● Synced</div>
+    <button id="logoutBtn" class="icon-btn">↪</button>
+  </div>
+</header>
+
+
+<main class="main-content">
+
+<!-- DASHBOARD -->
+<section id="page-dashboard" class="page active">
+
+  <div class="page-title-row">
+    <div>
+      <h1>Dashboard</h1>
+      <p class="muted">Your shop overview</p>
+    </div>
+    <button id="dashboardAddSaleBtn" class="primary-btn small">+ Sale</button>
+  </div>
+
+  <div class="stats-grid">
+    <div class="stat-card">
+      <span>Today's Sale</span>
+      <strong id="todaySale">₹0</strong>
+    </div>
+    <div class="stat-card">
+      <span>Today's Profit</span>
+      <strong id="todayProfit">₹0</strong>
+    </div>
+    <div class="stat-card">
+      <span>This Month</span>
+      <strong id="monthSale">₹0</strong>
+    </div>
+    <div class="stat-card">
+      <span>Transactions</span>
+      <strong id="totalTransactions">0</strong>
+    </div>
+  </div>
+
+  <div class="section-heading"><h3>Quick Overview</h3></div>
+
+  <div class="quick-grid">
+    <button class="quick-card" data-page="stock">
+      📦 <b>Stock</b>
+      <span><b id="dashboardStockCount">0</b> products</span>
+    </button>
+
+    <button class="quick-card" data-page="credit">
+      👤 <b>Udhaar</b>
+      <span>₹<b id="dashboardCreditAmount">0</b> pending</span>
+    </button>
+  </div>
+
+  <div class="section-heading">
+    <h3>Recent Sales</h3>
+    <button class="text-btn" data-page="history">View All</button>
+  </div>
+
+  <div id="recentSales" class="list-container">
+    <div class="empty-state">No sales yet</div>
+  </div>
+
+</section>
+
+
+<!-- SALES -->
+<section id="page-history" class="page">
+
+  <div class="page-title-row">
+    <div>
+      <h1>Sales History</h1>
+      <p class="muted">All transactions</p>
+    </div>
+    <button id="historyAddSaleBtn" class="primary-btn small">+ Sale</button>
+  </div>
+
+  <div class="filter-row">
+    <input id="salesSearch" class="search-input" placeholder="Search sale...">
+    <select id="paymentFilter" class="select-input">
+      <option value="all">All Payments</option>
+      <option value="Cash">Cash</option>
+      <option value="UPI">UPI</option>
+      <option value="Card">Card</option>
+      <option value="Credit">Udhaar</option>
+    </select>
+  </div>
+
+  <div id="salesList" class="list-container">
+    <div class="empty-state">No sales yet</div>
+  </div>
+
+</section>
+
+
+<!-- STOCK -->
+<section id="page-stock" class="page">
+
+  <div class="page-title-row">
+    <div>
+      <h1>Stock</h1>
+      <p class="muted">Manage inventory</p>
+    </div>
+    <button id="addProductBtn" class="primary-btn small">+ Product</button>
+  </div>
+
+  <div class="inventory-summary">
+    <div class="mini-stat">
+      <span>Products</span>
+      <strong id="totalProducts">0</strong>
+    </div>
+    <div class="mini-stat warning">
+      <span>Low Stock</span>
+      <strong id="lowStockProducts">0</strong>
+    </div>
+    <div class="mini-stat">
+      <span>Stock Value</span>
+      <strong id="stockValue">₹0</strong>
+    </div>
+  </div>
+
+  <input id="stockSearch" class="search-input" placeholder="Search product...">
+
+  <div id="stockList" class="list-container">
+    <div class="empty-state">No products added</div>
+  </div>
+
+</section>
+
+
+<!-- UDHAAR -->
+<section id="page-credit" class="page">
+
+  <div class="page-title-row">
+    <div>
+      <h1>Udhaar</h1>
+      <p class="muted">Customer pending payments</p>
+    </div>
+    <button id="addCreditBtn" class="primary-btn small">+ Udhaar</button>
+  </div>
+
+  <div class="credit-total-card">
+    <span>Total Pending</span>
+    <strong id="totalCreditAmount">₹0</strong>
+  </div>
+
+  <input id="creditSearch" class="search-input" placeholder="Search customer...">
+
+  <div id="creditList" class="list-container">
+    <div class="empty-state">No udhaar records</div>
+  </div>
+
+</section>
+
+
+<!-- REPORTS -->
+<section id="page-reports" class="page">
+
+  <div class="page-title-row">
+    <div>
+      <h1>Reports</h1>
+      <p class="muted">Shop performance</p>
+    </div>
+  </div>
+
+  <div class="report-grid">
+    <div class="report-card">
+      <span>Total Revenue</span>
+      <strong id="reportRevenue">₹0</strong>
+    </div>
+    <div class="report-card">
+      <span>Total Profit</span>
+      <strong id="reportProfit">₹0</strong>
+    </div>
+    <div class="report-card">
+      <span>Average Sale</span>
+      <strong id="reportAverage">₹0</strong>
+    </div>
+    <div class="report-card">
+      <span>Transactions</span>
+      <strong id="reportTransactions">0</strong>
+    </div>
+  </div>
+
+  <div class="section-heading"><h3>Payment Summary</h3></div>
+  <div id="paymentSummary" class="summary-list"></div>
+
+  <div class="section-heading"><h3>Other</h3></div>
+
+  <div class="summary-list">
+    <div class="summary-row">
+      <span>Total Products</span>
+      <strong id="reportProducts">0</strong>
+    </div>
+    <div class="summary-row">
+      <span>Low Stock</span>
+      <strong id="reportLowStock">0</strong>
+    </div>
+    <div class="summary-row">
+      <span>Stock Value</span>
+      <strong id="reportStockValue">₹0</strong>
+    </div>
+    <div class="summary-row">
+      <span>Total Udhaar</span>
+      <strong id="reportCredit">₹0</strong>
+    </div>
+  </div>
+
+</section>
+
+
+<!-- SETTINGS -->
+<section id="page-settings" class="page">
+
+  <div class="page-title-row">
+    <div>
+      <h1>Settings</h1>
+      <p class="muted">Manage your shop</p>
+    </div>
+  </div>
+
+  <div class="settings-card">
+
+    <div class="setting-item">
+      <div>
+        <strong>Shop Name</strong>
+        <span>Change shop name</span>
+      </div>
+      <input id="shopNameInput" class="setting-input" placeholder="Shop Name">
+    </div>
+
+    <div class="setting-item">
+      <div>
+        <strong>Shop ID</strong>
+        <span>Use on another phone</span>
+      </div>
+      <div class="shop-id-box">
+        <input id="shopIdDisplay" readonly>
+        <button id="copyShopIdBtn" class="secondary-btn small">Copy</button>
+      </div>
+    </div>
+
+    <button id="saveShopNameBtn" class="primary-btn full">
+      Save Shop Name
+    </button>
+
+  </div>
+
+  <div class="settings-card">
+    <div class="setting-item">
+      <div>
+        <strong>Local Login</strong>
+        <span>Remove saved login</span>
+      </div>
+      <button id="clearLocalLoginBtn" class="danger-btn">Clear</button>
+    </div>
+  </div>
+
+  <div class="app-info">
+    <div class="app-logo small-logo">DM</div>
+    <h3>Dukan Manager</h3>
+    <p>Simple • Smart • Cloud Connected</p>
+    <p class="footer-credit">Made for your shop • <b>Ankit Rajput</b></p>
+  </div>
+
+</section>
+
+</main>
+
+
+<!-- BOTTOM NAV -->
+<nav class="bottom-nav">
+
+  <button class="nav-item active" data-page="dashboard">
+    <span>⌂</span><small>Home</small>
+  </button>
+
+  <button class="nav-item" data-page="history">
+    <span>₹</span><small>Sales</small>
+  </button>
+
+  <button class="nav-item" data-page="stock">
+    <span>▣</span><small>Stock</small>
+  </button>
+
+  <button class="nav-item" data-page="credit">
+    <span>👤</span><small>Udhaar</small>
+  </button>
+
+  <button class="nav-item" data-page="reports">
+    <span>▥</span><small>Reports</small>
+  </button>
+
+  <button class="nav-item" data-page="settings">
+    <span>⚙</span><small>Settings</small>
+  </button>
+
+</nav>
+
+</div>
+
+
+<!-- CREATE SHOP -->
+<div id="createShopModal" class="modal hidden">
+<div class="modal-card">
+
+  <div class="modal-header">
+    <h2>Create Shop</h2>
+    <button class="close-btn" data-close-modal="createShopModal">×</button>
+  </div>
+
+  <div class="input-group">
+    <label>Shop Name</label>
+    <input id="newShopName" placeholder="Example: Ankit Garments">
+  </div>
+
+  <div class="input-group">
+    <label>Shop ID</label>
+    <input id="newShopCode" placeholder="Example: ANKIT4821">
+  </div>
+
+  <button id="createShopBtn" class="primary-btn full">Create Shop</button>
+  <p id="createShopMessage" class="message"></p>
+
+</div>
+</div>
+
+
+<!-- SALE -->
+<div id="saleModal" class="modal hidden">
+<div class="modal-card">
+
+  <div class="modal-header">
+    <h2>Add Sale</h2>
+    <button class="close-btn" data-close-modal="saleModal">×</button>
+  </div>
+
+  <div class="input-group">
+    <label>Product Name</label>
+    <input id="saleProduct" placeholder="Example: Shirt">
+  </div>
+
+  <div class="form-grid">
+
+    <div class="input-group">
+      <label>Quantity</label>
+      <input id="saleQuantity" type="number" min="1" value="1">
+    </div>
+
+    <div class="input-group">
+      <label>Selling Price</label>
+      <input id="saleSellingPrice" type="number" min="0">
+    </div>
+
+  </div>
+
+  <div class="input-group">
+    <label>Purchase Price / Unit</label>
+    <input id="salePurchasePrice" type="number" min="0">
+  </div>
+
+  <div class="input-group">
+    <label>Payment</label>
+    <select id="salePaymentMethod">
+      <option>Cash</option>
+      <option>UPI</option>
+      <option>Card</option>
+      <option>Credit</option>
+    </select>
+  </div>
+
+  <div class="input-group">
+    <label>Customer Name</label>
+    <input id="saleCustomer" placeholder="Optional">
+  </div>
+
+  <div class="input-group">
+    <label>Notes</label>
+    <textarea id="saleNotes" rows="2"></textarea>
+  </div>
+
+  <div class="sale-preview">
+    <span>Total Sale</span>
+    <strong id="saleTotalPreview">₹0</strong>
+  </div>
+
+  <button id="saveSaleBtn" class="primary-btn full">Save Sale</button>
+  <p id="saleMessage" class="message"></p>
+
+</div>
+</div>
+
+
+<!-- PRODUCT -->
+<div id="productModal" class="modal hidden">
+<div class="modal-card">
+
+  <div class="modal-header">
+    <h2>Add Product</h2>
+    <button class="close-btn" data-close-modal="productModal">×</button>
+  </div>
+
+  <div class="input-group">
+    <label>Product Name</label>
+    <input id="productName" placeholder="Example: T-Shirt">
+  </div>
+
+  <div class="form-grid">
+
+    <div class="input-group">
+      <label>Quantity</label>
+      <input id="productQuantity" type="number" min="0" value="0">
+    </div>
+
+    <div class="input-group">
+      <label>Low Stock At</label>
+      <input id="productLowStock" type="number" min="0" value="5">
+    </div>
+
+  </div>
+
+  <div class="form-grid">
+
+    <div class="input-group">
+      <label>Purchase Price</label>
+      <input id="productPurchasePrice" type="number" min="0">
+    </div>
+
+    <div class="input-group">
+      <label>Selling Price</label>
+      <input id="productSellingPrice" type="number" min="0">
+    </div>
+
+  </div>
+
+  <button id="saveProductBtn" class="primary-btn full">Save Product</button>
+  <p id="productMessage" class="message"></p>
+
+</div>
+</div>
+
+
+<!-- EDIT PRODUCT -->
+<div id="editStockModal" class="modal hidden">
+<div class="modal-card">
+
+  <div class="modal-header">
+    <h2>Edit Product</h2>
+    <button class="close-btn" data-close-modal="editStockModal">×</button>
+  </div>
+
+  <input id="editProductId" type="hidden">
+
+  <div class="input-group">
+    <label>Product Name</label>
+    <input id="editProductName">
+  </div>
+
+  <div class="form-grid">
+
+    <div class="input-group">
+      <label>Quantity</label>
+      <input id="editProductQuantity" type="number" min="0">
+    </div>
+
+    <div class="input-group">
+      <label>Low Stock At</label>
+      <input id="editProductLowStock" type="number" min="0">
+    </div>
+
+  </div>
+
+  <div class="form-grid">
+
+    <div class="input-group">
+      <label>Purchase Price</label>
+      <input id="editProductPurchasePrice" type="number" min="0">
+    </div>
+
+    <div class="input-group">
+      <label>Selling Price</label>
+      <input id="editProductSellingPrice" type="number" min="0">
+    </div>
+
+  </div>
+
+  <button id="updateProductBtn" class="primary-btn full">Update Product</button>
+  <button id="deleteProductBtn" class="danger-btn full">Delete Product</button>
+
+  <p id="editProductMessage" class="message"></p>
+
+</div>
+</div>
+
+
+<!-- UDHAAR -->
+<div id="creditModal" class="modal hidden">
+<div class="modal-card">
+
+  <div class="modal-header">
+    <h2>Add Udhaar</h2>
+    <button class="close-btn" data-close-modal="creditModal">×</button>
+  </div>
+
+  <div class="input-group">
+    <label>Customer Name</label>
+    <input id="creditCustomerName" placeholder="Customer name">
+  </div>
+
+  <div class="input-group">
+    <label>Phone</label>
+    <input id="creditPhone" type="tel">
+  </div>
+
+  <div class="input-group">
+    <label>Total Amount</label>
+    <input id="creditTotalAmount" type="number" min="0">
+  </div>
+
+  <div class="input-group">
+    <label>Already Paid</label>
+    <input id="creditPaidAmount" type="number" min="0" value="0">
+  </div>
+
+  <div class="input-group">
+    <label>Notes</label>
+    <textarea id="creditNotes" rows="2"></textarea>
+  </div>
+
+  <div class="credit-preview">
+    <span>Remaining</span>
+    <strong id="creditRemainingPreview">₹0</strong>
+  </div>
+
+  <button id="saveCreditBtn" class="primary-btn full">Save Udhaar</button>
+  <p id="creditMessage" class="message"></p>
+
+</div>
+</div>
+
+
+<!-- UDHAAR DETAIL -->
+<div id="creditDetailModal" class="modal hidden">
+<div class="modal-card">
+
+  <div class="modal-header">
+    <h2 id="creditDetailName">Customer</h2>
+    <button class="close-btn" data-close-modal="creditDetailModal">×</button>
+  </div>
+
+  <p id="creditDetailPhone" class="muted"></p>
+
+  <div class="credit-detail-box">
+
+    <div>
+      <span>Total</span>
+      <strong id="creditDetailTotal">₹0</strong>
+    </div>
+
+    <div>
+      <span>Paid</span>
+      <strong id="creditDetailPaid">₹0</strong>
+    </div>
+
+    <div>
+      <span>Remaining</span>
+      <strong id="creditDetailRemaining">₹0</strong>
+    </div>
+
+  </div>
+
+  <input id="creditDetailId" type="hidden">
+
+  <div class="input-group">
+    <label>Payment Received</label>
+    <input id="creditPaymentAmount" type="number" min="0">
+  </div>
+
+  <div class="input-group">
+    <label>Payment Note</label>
+    <input id="creditPaymentNote">
+  </div>
+
+  <button id="saveCreditPaymentBtn" class="primary-btn full">
+    Receive Payment
+  </button>
+
+  <button id="deleteCreditBtn" class="danger-btn full">
+    Delete Udhaar
+  </button>
+
+  <p id="creditDetailMessage" class="message"></p>
+
+</div>
+</div>
+
+
+<div id="toast" class="toast hidden">
+  <span id="toastMessage"></span>
+</div>
+
+<script src="script.js"></script>
+
+</body>
+</html>
